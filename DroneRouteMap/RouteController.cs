@@ -9,108 +9,117 @@ using GMap.NET.WindowsForms;
 
 namespace DroneRouteMap
 {
-    class RouteController
+    class RouteController : Geometry
     {
-
         public MapPainter painter { get; set; }
 
-        List<PointLatLng> route = new List<PointLatLng>();
-
-        Geometry geometry = new Geometry();
-        
-        public void AddWayPoint (double lat, double lng)
+        public void RouteFromPolygon (Drone drone)
         {
-            route.Add(new PointLatLng(lat, lng));
-        }
+            var polygon = painter.polygon;
 
-        public void DelWayPoint (int index)
-        {
-            route.RemoveAt(index);
-        }
+            double radius = drone.radius;//getDistance(new PointLatLng(0, 0), new PointLatLng(0, drone.radius));
 
-        public void Clear()
-        {
-            route.Clear();
-        }
+            double polygonarea = Area(painter.polygon),
 
-        public void ChgPointPosition(int oldindex, int newindex)
-        {
+            circlearea = Math.PI * Math.Pow(radius, 2d) // 111319;
 
-        }
-
-        public void RouteFromPolygon (GMapPolygon polygon, Drone drone)
-        {
-            PointLatLng frompoint = route.Last();
-
-            PointLatLng startpoint = polygon.Points.First();
-
-            int i = 0, startindex = 0;
-
-            foreach (PointLatLng point in polygon.Points)
+            if (polygonarea > circlearea)
             {
-                double distance = geometry.Distance(point, frompoint);
+                PointLatLng frompoint = painter.waypoints.Last(),
+                    
+                    startpoint = polygon.Points.First(),
+                    
+                    nextpoint = new PointLatLng(),
+                   
+                    prepoint = new PointLatLng(),
+                    
+                    testpoint = new PointLatLng();
 
-                double startdistance = geometry.Distance(startpoint, frompoint);
+                List<PointLatLng> rotatedpolygon = new List<PointLatLng>(),
+                    
+                    innerpolygon = new List<PointLatLng>();
 
-                if (distance < startdistance)
+                int i = 0, startindex = 0;
+
+                foreach (PointLatLng point in polygon.Points)
                 {
-                    startpoint = point;
-                    startindex = i;
+                    double distance = Distance(point, frompoint);
+
+                    double startdistance = Distance(startpoint, frompoint);
+
+                    if (distance < startdistance)
+                    {
+                        startpoint = point;
+                        startindex = i;
+                    }
+                    i++;
                 }
-                i++;
-            }
 
-            PointLatLng nextpoint = new PointLatLng(), prepoint = new PointLatLng();
+                for (i = startindex + 1; i < polygon.Points.Count; i++)
+                    rotatedpolygon.Add(polygon.Points[i]);
 
-            if (startpoint == polygon.Points.Last())
-            {
-                nextpoint = polygon.Points.First();
+                for (i = 0; i <= startindex; i++)
+                    rotatedpolygon.Add(polygon.Points[i]);
 
-                prepoint = polygon.Points[startindex - 1];
-            }
-            else if (startpoint == polygon.Points.First())
-            {
-                prepoint = polygon.Points.Last();
+                int PointCount = rotatedpolygon.Count;
 
-                nextpoint = polygon.Points[startindex + 1];
+                prepoint = rotatedpolygon[PointCount - 2];
+                startpoint = rotatedpolygon[PointCount - 1];
+
+                for (i = 0; i <= PointCount; i++)
+                {
+                    if (i < PointCount)
+                        nextpoint = rotatedpolygon[i];
+                    else nextpoint = rotatedpolygon[0];
+
+                    double corner = Corner(prepoint, startpoint, nextpoint);
+
+                    double basecorner = BaseCorner(prepoint, startpoint, nextpoint);
+
+                    double sumcorner = corner / 2d + basecorner;
+
+                    testpoint = PointFromDistCorner(startpoint, drone.radius, sumcorner);
+
+                    PointLatLng innerpoint = PointFromDistCorner(testpoint, drone.radius * 2, sumcorner);
+
+                    if (!IsPointInPolygon(testpoint, polygon))
+                    {
+                        testpoint = PointFromDistCorner(startpoint, drone.radius, sumcorner + Math.PI);
+
+                        innerpoint = PointFromDistCorner(testpoint, drone.radius * 2, sumcorner + Math.PI);
+                    }
+
+                    //if (IsSquareInPolygon(testpoint, drone.radius, polygon))
+                        painter.AddMarker(testpoint, "green");
+                    //else return;
+
+                    if (i < PointCount)
+                        innerpolygon.Add(innerpoint);
+
+                    prepoint = startpoint;
+
+                    startpoint = nextpoint;
+                }
+
+                painter.DelPolygon();
+
+                painter.AddPolygon(innerpolygon);
+
+                Console.WriteLine(Area(painter.polygon));
+
+                Console.WriteLine(Math.PI * Math.Pow(drone.radius, 2));
+
+                RouteFromPolygon(drone);
+
             }
             else
-            {
-                prepoint = polygon.Points[startindex - 1];
-
-                nextpoint = polygon.Points[startindex + 1];
-            }
-
-            double corner = geometry.Corner(prepoint, startpoint, nextpoint);
-
-            Console.WriteLine(corner / Math.PI * 180);
-
-            geometry.basecorner = geometry.CornerToBase(startpoint, nextpoint);
-
-            Console.WriteLine(geometry.basecorner / Math.PI * 180);
-
-            startpoint.Lat = startpoint.Lat + drone.radius * Math.Cos(corner);
-
-            startpoint.Lng = startpoint.Lng + drone.radius * Math.Sin(corner);
-
-            painter.AddMarker(startpoint.Lat, startpoint.Lng, "cross");
-
-            startpoint = geometry.PointToBase(startpoint);
-
-            painter.AddMarker(startpoint.Lat, startpoint.Lng, "green");
-
-            AddWayPoint(startpoint.Lat, startpoint.Lng);
-        }
-
-        public GMapPolygon GetPolygon()
-        {
-            return new GMapPolygon(route, "lox");
+                painter.AddMarker(CenterPoint(polygon), "green");
+            painter.DelPolygon();
         }
 
         public string ToJson()
         {
-            return JsonConvert.SerializeObject(route);
+            return JsonConvert.SerializeObject(painter.waypoints);
         }
-
     }
 }

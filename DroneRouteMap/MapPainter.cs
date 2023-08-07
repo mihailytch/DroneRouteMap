@@ -14,23 +14,24 @@ namespace DroneRouteMap
     {
         public GMapOverlay overlay { get; set; }
 
-        List<GMapPolygon> polygons = new List<GMapPolygon>();
+        public GMapPolygon polygon = null;
 
-        //GMapMarker forpoints = new GMapMarkerGoogleGreen(); 
+        public List<GMapPolygon> lines = new List<GMapPolygon>();
 
-        int numpoints = 0;
-        int numpolygons = 0;
+        public List<PointLatLng> waypoints = new List<PointLatLng>();
 
+        public List<GMapMarker> crosses = new List<GMapMarker>();
 
-        public void AddMarker(double lat, double lng, string color)
+        public void AddMarker(PointLatLng point, string color)
         {
-            PointLatLng point = new PointLatLng(lat, lng);
-
             switch (color)
             {
                 case "red":
                     {
                         overlay.Markers.Add(new GMapMarkerGoogleRed(point));
+
+                        crosses.Add(overlay.Markers.Last());
+
                         break;
                     }
                 case "green":
@@ -41,29 +42,28 @@ namespace DroneRouteMap
 
                         newmarker.ToolTip = new GMap.NET.WindowsForms.ToolTips.GMapRoundedToolTip(newmarker);
 
-                        newmarker.ToolTipText = numpoints.ToString();
+                        newmarker.ToolTipText = (waypoints.Count).ToString();
 
-                        newmarker.ToolTipMode = MarkerTooltipMode.Always;
+                        newmarker.ToolTipMode = MarkerTooltipMode.OnMouseOver;
 
-                        if (overlay.Markers.Count() > 1)
+                        if (waypoints.Count() > 0)
                         {
-                            var premarker = overlay.Markers[overlay.Markers.Count() - 2];
-
-                            PointLatLng prepoint = new PointLatLng(premarker.Position.Lat, premarker.Position.Lng);
+                            PointLatLng prepoint = waypoints.Last();
 
                             AddLine(prepoint, point);
                         }
-                        numpoints++;
+
+                        waypoints.Add(point);
+
                         break;
                     }
                 default:
                     {
                         overlay.Markers.Add(new GMapMarkerCross(point));
+
                         break;
                     }
             }
-
-            
         }
 
         public void DelMarker(GMapMarker marker)
@@ -73,11 +73,14 @@ namespace DroneRouteMap
             if (DelLine(marker.Position) && overlay.Markers.Last() != marker && overlay.Markers.First() != marker)
                 AddLine(overlay.Markers[index-1].Position, overlay.Markers[index+1].Position);
 
-            if (overlay.Markers.Last() != marker)
+            if (overlay.Markers.Last() != marker && marker is GMapMarkerGoogleGreen)
                 DelLine(overlay.Markers[index + 1].Position);
 
             if (marker is GMapMarkerGoogleGreen)
-                numpoints--;
+                waypoints.Remove(marker.Position);
+
+            if (marker is GMapMarkerGoogleRed)
+                crosses.Remove(marker);
 
             overlay.Markers.Remove(marker);
 
@@ -86,51 +89,55 @@ namespace DroneRouteMap
             foreach (GMapMarker point in overlay.Markers)
             {
                 point.ToolTipText = i.ToString();
+
                 i++;
             }
         }
 
-        public void AddPolygon()
+        public void AddPolygon(List<PointLatLng> points)
         {
-            List<PointLatLng> points = new List<PointLatLng>();
+            polygon = new GMapPolygon(points, "polygon");
 
-            List<GMapMarker> crosses = new List<GMapMarker>();
+            overlay.Polygons.Add(polygon);
+        }
 
-            int i = 0;
-
-            foreach (var point in overlay.Markers)
-            {
-                if (point is GMapMarkerGoogleRed)
-                {
-                    points.Add(point.Position);
-
-                    crosses.Add(point);
-                }
-                i++;
-            }
+        public void DelPolygon()
+        {
+            overlay.Polygons.Remove(polygon);
 
             foreach (GMapMarker cross in crosses)
                 overlay.Markers.Remove(cross);
 
-            overlay.Polygons.Add(new GMapPolygon(points, "polygon"));
-            
-            numpolygons++;
+            crosses.Clear();
 
-            /*
-            centralpoint = new PointLatLng();
+            polygon = null;
+        }
 
-            foreach(PointLatLng point in points)
+        public void UpdatePolygon()
+        {
+            if (overlay.Markers.Where(
+                                marker => marker is GMapMarkerGoogleRed).Count() > 2)
             {
-                centralpoint.Lat += point.Lat;
+                if (polygon != null)
+                {
+                    overlay.Polygons.Remove(polygon);
+                    polygon = null;
+                }
 
-                centralpoint.Lng += point.Lng;
+                List<PointLatLng> points = new List<PointLatLng>();
+
+                foreach (GMapMarkerGoogleRed cross in crosses)
+                {
+                    points.Add(cross.Position);
+                }
+                AddPolygon(points);
+
             }
-
-            centralpoint.Lat /= points.Count();
-            centralpoint.Lng /= points.Count();
-
-            AddMarker(centralpoint.Lat, centralpoint.Lng, "green");
-            */
+            else if (polygon != null)
+            {
+                overlay.Polygons.Remove(polygon);
+                polygon = null;
+            }
         }
 
         void AddLine(PointLatLng point1, PointLatLng point2)
@@ -145,21 +152,24 @@ namespace DroneRouteMap
 
             newline.Stroke = new Pen(Color.Red, 1);
 
-            polygons.Add(newline);
-
             overlay.Polygons.Add(newline);
+
+            lines.Add(newline);
         }
 
         bool DelLine(PointLatLng endpoint)
         {
             GMapPolygon line = null;
 
-            if (overlay.Polygons.Where(polygon => polygon.Points[1] == endpoint).Count() > 0) 
-                line = overlay.Polygons.Where(polygon => polygon.Points[1] == endpoint).First();
+            if (lines.Where(polygon => polygon.Points[1] == endpoint).Count() > 0) 
+                line = lines.Where(polygon => polygon.Points[1] == endpoint).First();
 
             if (line != null)
             {
                 overlay.Polygons.Remove(line);
+
+                lines.Remove(line);
+
                 return true;
             }
 

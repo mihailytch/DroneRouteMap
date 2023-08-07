@@ -76,7 +76,9 @@ namespace DroneRouteMap
 
             //Указываем, что при загрузке карты будет использоваться 
             //18ти кратное приближение.
-            gMapControl1.Zoom = 5;
+            gMapControl1.Zoom = 18;
+
+            gMapControl1.Position = new GMap.NET.PointLatLng(55.2173929035307d, 82.8487533330917d);
 
             //Указываем что все края элемента управления
             //закрепляются у краев содержащего его элемента
@@ -101,59 +103,46 @@ namespace DroneRouteMap
             route.painter = painter;
 
             ////////////////////////////////////////////////////////////
-            GMap.NET.PointLatLng a = new GMap.NET.PointLatLng(1, 1), b = new GMap.NET.PointLatLng(0, 1), c = new GMap.NET.PointLatLng(0, 2);
+            /*List<GMap.NET.PointLatLng> a = new List<GMap.NET.PointLatLng>
+            {
+                new GMap.NET.PointLatLng(1, 0), 
+                new GMap.NET.PointLatLng(-1, 0), 
+                new GMap.NET.PointLatLng(0, 1),
+                new GMap.NET.PointLatLng(0, -1)
+            };
 
-            painter.AddMarker(a.Lat, a.Lng, "cross");
-
-            painter.AddMarker(b.Lat, b.Lng, "cross");
-
-            painter.AddMarker(c.Lat, c.Lng, "cross");
+            foreach(GMap.NET.PointLatLng point in a)
+            {
+                painter.AddMarker(point.Lat, point.Lng, "green");
+            }
 
             Geometry g = new Geometry();
 
-            g.basis = new GMap.NET.PointLatLng(0, 1);
-
-            double corner = g.Corner(a, b, c);
-
-            Console.WriteLine((corner * 180 / Math.PI/2).ToString());
-
-            GMap.NET.PointLatLng newpoint = g.MidPoint(a,b,c);
-
-            painter.AddMarker(newpoint.Lat, newpoint.Lng, "green");
-
-            for(double i = 0; i < 360*Math.PI/180; i+=0.05)
-                painter.AddMarker(c.Lng * Math.Sin(corner - i), c.Lng * Math.Cos(corner-i), "green");
-
+            if (g.cross2(a[0], a[1], a[2], a[3]))
+                Console.WriteLine("lox");*/
 
         }
 
         private void gMapControl1_OnMarkerClick(GMapMarker item, MouseEventArgs e)
         {
             painter.DelMarker(item);
+            painter.UpdatePolygon();
         }
 
         private void gMapControl1_MouseDoubleClick(object sender, MouseEventArgs e)
         {
-            //markersOverlay
+            
         }
 
         private void buttonRouteDot_Click(object sender, EventArgs e)
         {
-            route.Clear();
-
-            foreach (var marker in markersOverlay.Markers)
-            {
-                if(marker is GMap.NET.WindowsForms.Markers.GMapMarkerGoogleGreen)
-                    route.AddWayPoint(marker.Position.Lat, marker.Position.Lng);
-            }
-
             label1.Text = route.ToJson();
         }
 
         private void buttonRoutePol_Click(object sender, EventArgs e)
         {
-            painter.AddPolygon();
-            route.RouteFromPolygon(markersOverlay.Polygons.Last(), new Drone(5,5,0.005d));
+            if(painter.waypoints.Count > 0 && painter.polygon != null)
+                route.RouteFromPolygon(new Drone(5, 5, Double.Parse(textBoxDronRadius.Text)));
         }
 
         private void gMapControl1_MouseClick(object sender, MouseEventArgs e)
@@ -161,18 +150,23 @@ namespace DroneRouteMap
             double lat = gMapControl1.FromLocalToLatLng(e.X, e.Y).Lat;
             double lng = gMapControl1.FromLocalToLatLng(e.X, e.Y).Lng;
 
+            GMap.NET.PointLatLng point = new GMap.NET.PointLatLng(lat, lng);
+
             if (e.Button == MouseButtons.Right)
             switch (regime)
             {
                 case "point":
                     {
-                            painter.AddMarker(lat, lng, "green");    
+                            painter.AddMarker(point, "green");    
                         break;
                     }
                 case "polygon":
                     {
-                            painter.AddMarker(lat, lng, "red");
-                        break;
+                            painter.AddMarker(point, "red");
+
+                            painter.UpdatePolygon();
+
+                            break;
                     }
                 default:
                     break;
@@ -194,7 +188,7 @@ namespace DroneRouteMap
         {
             labelLat.Text = gMapControl1.FromLocalToLatLng(e.X, e.Y).Lat.ToString();
 
-            labelLng.Text = gMapControl1.FromLocalToLatLng(e.X, e.Y).Lng.ToString();
+            labelLng.Text = gMapControl1.FromLocalToLatLng(e.X, e.Y).Lng.ToString(); 
         }
     }
 }

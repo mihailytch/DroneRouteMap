@@ -38,6 +38,8 @@
             this.radioButtonPol = new System.Windows.Forms.RadioButton();
             this.labelLat = new System.Windows.Forms.Label();
             this.labelLng = new System.Windows.Forms.Label();
+            this.label4 = new System.Windows.Forms.Label();
+            this.textBoxDronRadius = new System.Windows.Forms.TextBox();
             this.SuspendLayout();
             // 
             // gMapControl1
@@ -57,7 +59,7 @@
             this.gMapControl1.RetryLoadTile = 0;
             this.gMapControl1.RoutesEnabled = true;
             this.gMapControl1.ShowTileGridLines = false;
-            this.gMapControl1.Size = new System.Drawing.Size(386, 360);
+            this.gMapControl1.Size = new System.Drawing.Size(667, 360);
             this.gMapControl1.TabIndex = 0;
             this.gMapControl1.Zoom = 0D;
             this.gMapControl1.OnMarkerClick += new GMap.NET.WindowsForms.MarkerClick(this.gMapControl1_OnMarkerClick);
@@ -68,7 +70,7 @@
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(404, 12);
+            this.label1.Location = new System.Drawing.Point(688, 12);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(35, 13);
             this.label1.TabIndex = 1;
@@ -76,7 +78,7 @@
             // 
             // buttonRouteDot
             // 
-            this.buttonRouteDot.Location = new System.Drawing.Point(506, 198);
+            this.buttonRouteDot.Location = new System.Drawing.Point(693, 280);
             this.buttonRouteDot.Name = "buttonRouteDot";
             this.buttonRouteDot.Size = new System.Drawing.Size(75, 23);
             this.buttonRouteDot.TabIndex = 2;
@@ -86,7 +88,7 @@
             // 
             // buttonRoutePol
             // 
-            this.buttonRoutePol.Location = new System.Drawing.Point(506, 254);
+            this.buttonRoutePol.Location = new System.Drawing.Point(691, 238);
             this.buttonRoutePol.Name = "buttonRoutePol";
             this.buttonRoutePol.Size = new System.Drawing.Size(75, 23);
             this.buttonRoutePol.TabIndex = 3;
@@ -97,16 +99,16 @@
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(405, 203);
+            this.label2.Location = new System.Drawing.Point(690, 264);
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(85, 13);
+            this.label2.Size = new System.Drawing.Size(75, 13);
             this.label2.TabIndex = 4;
-            this.label2.Text = "Путь по точкам";
+            this.label2.Text = "Путь в джсон";
             // 
             // label3
             // 
             this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(405, 259);
+            this.label3.Location = new System.Drawing.Point(685, 222);
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(95, 13);
             this.label3.TabIndex = 5;
@@ -116,7 +118,7 @@
             // 
             this.radioButtonDot.AutoSize = true;
             this.radioButtonDot.Checked = true;
-            this.radioButtonDot.Location = new System.Drawing.Point(495, 100);
+            this.radioButtonDot.Location = new System.Drawing.Point(691, 117);
             this.radioButtonDot.Name = "radioButtonDot";
             this.radioButtonDot.Size = new System.Drawing.Size(55, 17);
             this.radioButtonDot.TabIndex = 6;
@@ -128,7 +130,7 @@
             // radioButtonPol
             // 
             this.radioButtonPol.AutoSize = true;
-            this.radioButtonPol.Location = new System.Drawing.Point(495, 123);
+            this.radioButtonPol.Location = new System.Drawing.Point(691, 140);
             this.radioButtonPol.Name = "radioButtonPol";
             this.radioButtonPol.Size = new System.Drawing.Size(68, 17);
             this.radioButtonPol.TabIndex = 7;
@@ -139,7 +141,7 @@
             // labelLat
             // 
             this.labelLat.AutoSize = true;
-            this.labelLat.Location = new System.Drawing.Point(405, 52);
+            this.labelLat.Location = new System.Drawing.Point(689, 52);
             this.labelLat.Name = "labelLat";
             this.labelLat.Size = new System.Drawing.Size(35, 13);
             this.labelLat.TabIndex = 8;
@@ -148,17 +150,36 @@
             // labelLng
             // 
             this.labelLng.AutoSize = true;
-            this.labelLng.Location = new System.Drawing.Point(405, 84);
+            this.labelLng.Location = new System.Drawing.Point(689, 84);
             this.labelLng.Name = "labelLng";
             this.labelLng.Size = new System.Drawing.Size(35, 13);
             this.labelLng.TabIndex = 9;
             this.labelLng.Text = "label5";
+            // 
+            // label4
+            // 
+            this.label4.AutoSize = true;
+            this.label4.Location = new System.Drawing.Point(689, 171);
+            this.label4.Name = "label4";
+            this.label4.Size = new System.Drawing.Size(76, 13);
+            this.label4.TabIndex = 10;
+            this.label4.Text = "Радиус дрона";
+            // 
+            // textBoxDronRadius
+            // 
+            this.textBoxDronRadius.Location = new System.Drawing.Point(686, 188);
+            this.textBoxDronRadius.Name = "textBoxDronRadius";
+            this.textBoxDronRadius.Size = new System.Drawing.Size(82, 20);
+            this.textBoxDronRadius.TabIndex = 11;
+            this.textBoxDronRadius.Text = "1";
             // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(787, 384);
+            this.Controls.Add(this.textBoxDronRadius);
+            this.Controls.Add(this.label4);
             this.Controls.Add(this.labelLng);
             this.Controls.Add(this.labelLat);
             this.Controls.Add(this.radioButtonPol);
@@ -189,6 +210,8 @@
         private System.Windows.Forms.RadioButton radioButtonPol;
         private System.Windows.Forms.Label labelLat;
         private System.Windows.Forms.Label labelLng;
+        private System.Windows.Forms.Label label4;
+        private System.Windows.Forms.TextBox textBoxDronRadius;
     }
 }
 
