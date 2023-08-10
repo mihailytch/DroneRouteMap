@@ -17,11 +17,11 @@ namespace DroneRouteMap
         {
             var polygon = painter.polygon;
 
-            double radius = drone.radius;//getDistance(new PointLatLng(0, 0), new PointLatLng(0, drone.radius));
+            double radius = getDistance(new PointLatLng(0, 0), new PointLatLng(0, drone.radius));
 
             double polygonarea = Area(painter.polygon),
 
-            circlearea = Math.PI * Math.Pow(radius, 2d) // 111319;
+            circlearea = Math.PI * Math.Pow(radius, 2d);
 
             if (polygonarea > circlearea)
             {
@@ -66,7 +66,7 @@ namespace DroneRouteMap
                 prepoint = rotatedpolygon[PointCount - 2];
                 startpoint = rotatedpolygon[PointCount - 1];
 
-                for (i = 0; i <= PointCount; i++)
+                for (i = 0; i < PointCount; i++)
                 {
                     if (i < PointCount)
                         nextpoint = rotatedpolygon[i];
@@ -87,14 +87,82 @@ namespace DroneRouteMap
                         testpoint = PointFromDistCorner(startpoint, drone.radius, sumcorner + Math.PI);
 
                         innerpoint = PointFromDistCorner(testpoint, drone.radius * 2, sumcorner + Math.PI);
-                    }
 
-                    //if (IsSquareInPolygon(testpoint, drone.radius, polygon))
                         painter.AddMarker(testpoint, "green");
-                    //else return;
+                        painter.AddCircle(testpoint, drone.radius);
+                    }
+                    else
+                    {
+                        double distance = Distance(startpoint, nextpoint);
 
-                    if (i < PointCount)
-                        innerpolygon.Add(innerpoint);
+                        for (int j = 2; j * drone.radius < distance; j++)
+                        {
+                            double relativecorner = RelativeCorner(startpoint, nextpoint),
+
+                            sidecorner = Math.PI / 2d;
+
+                            PointLatLng neartestpoint = PointFromDistCorner(startpoint, j * drone.radius, relativecorner),
+                                
+                                backtestpoint = PointFromDistCorner(neartestpoint, drone.radius * 2, relativecorner + Math.PI);
+
+                            neartestpoint = PointFromDistCorner(neartestpoint, drone.radius * 2, relativecorner + sidecorner);
+
+                            if (!IsPointInPolygon(neartestpoint, polygon))
+                            {
+                                sidecorner = -sidecorner;
+                                neartestpoint = PointFromDistCorner(neartestpoint, drone.radius * 4, relativecorner + sidecorner);
+                            }
+
+                            if(IsPointInPolygon(neartestpoint, polygon) && Distance(startpoint, backtestpoint) < distance)
+                            {
+                                PointLatLng nearpoint = PointFromDistCorner(neartestpoint, drone.radius, relativecorner - sidecorner);
+
+                                painter.AddMarker(testpoint, "green");
+                                painter.AddCircle(testpoint, drone.radius);
+
+                                painter.AddCircle(nearpoint, drone.radius);
+                                painter.AddMarker(nearpoint, "green");
+                                
+                                break;
+                            }
+                        }
+
+                       for (int j = 2; j * drone.radius < distance; j++)
+                       {
+                            double relativecorner = RelativeCorner(startpoint, nextpoint),
+
+                            sidecorner = Math.PI / 2d;
+
+                            PointLatLng fartestpoint = PointFromDistCorner(nextpoint, j * drone.radius, relativecorner + Math.PI),
+
+                                forwardtestpoint = PointFromDistCorner(fartestpoint, drone.radius * 2, relativecorner);
+
+                            fartestpoint = PointFromDistCorner(fartestpoint, drone.radius * 2, relativecorner + sidecorner);
+
+                            if (!IsPointInPolygon(fartestpoint, polygon))
+                            {
+                                sidecorner = -sidecorner;
+                                fartestpoint = PointFromDistCorner(fartestpoint, drone.radius * 4, relativecorner + sidecorner);
+                            }
+
+                            //painter.AddMarker(fartestpoint, "cross");
+
+                            if (IsPointInPolygon(fartestpoint, polygon) && Distance(startpoint, forwardtestpoint) < distance)
+                            {
+                                PointLatLng farpoint = PointFromDistCorner(fartestpoint, drone.radius, relativecorner - sidecorner);
+
+                                //painter.AddMarker(fartestpoint, "cross");
+                                //painter.AddMarker(forwardtestpoint, "cross"); 
+
+                                painter.AddMarker(farpoint, "green");
+                                painter.AddCircle(farpoint, drone.radius);
+
+                                break;
+                            }
+                        }
+                    }
+                    //if (i < PointCount)
+                    innerpolygon.Add(innerpoint);
 
                     prepoint = startpoint;
 
@@ -109,7 +177,7 @@ namespace DroneRouteMap
 
                 Console.WriteLine(Math.PI * Math.Pow(drone.radius, 2));
 
-                RouteFromPolygon(drone);
+                //RouteFromPolygon(drone);
 
             }
             else

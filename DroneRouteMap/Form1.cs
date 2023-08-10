@@ -51,7 +51,7 @@ namespace DroneRouteMap
             gMapControl1.MarkersEnabled = true;
 
             //Указываем значение максимального приближения.
-            gMapControl1.MaxZoom = 18;
+            gMapControl1.MaxZoom = 22;
 
             //Указываем значение минимального приближения.
             gMapControl1.MinZoom = 2;
@@ -73,10 +73,10 @@ namespace DroneRouteMap
             //Скрываем внешнюю сетку карты
             //с заголовками.
             gMapControl1.ShowTileGridLines = false;
-
+ 
             //Указываем, что при загрузке карты будет использоваться 
             //18ти кратное приближение.
-            gMapControl1.Zoom = 18;
+            gMapControl1.Zoom = 20;
 
             gMapControl1.Position = new GMap.NET.PointLatLng(55.2173929035307d, 82.8487533330917d);
 
@@ -103,6 +103,27 @@ namespace DroneRouteMap
             route.painter = painter;
 
             ////////////////////////////////////////////////////////////
+            /*
+            gMapControl1.Position = new GMap.NET.PointLatLng(0.5d, 1);
+
+            gMapControl1.Zoom = 8;
+
+            painter.AddMarker(new GMap.NET.PointLatLng(0, 2), "green");
+
+            painter.AddMarker(new GMap.NET.PointLatLng(1, 0), "red");
+            painter.AddMarker(new GMap.NET.PointLatLng(0.25, 0.25), "red");
+            painter.AddMarker(new GMap.NET.PointLatLng(0, 1), "red");
+
+            painter.UpdatePolygon();
+
+            route.RouteFromPolygon(new Drone(5, 5, 1000d / 111319d));
+
+            painter.AddMarker(new GMap.NET.PointLatLng(1, 0), "red");
+            painter.AddMarker(new GMap.NET.PointLatLng(0.25, 0.25), "red");
+            painter.AddMarker(new GMap.NET.PointLatLng(0, 1), "red");
+
+            painter.UpdatePolygon();
+
             /*List<GMap.NET.PointLatLng> a = new List<GMap.NET.PointLatLng>
             {
                 new GMap.NET.PointLatLng(1, 0), 
@@ -142,7 +163,7 @@ namespace DroneRouteMap
         private void buttonRoutePol_Click(object sender, EventArgs e)
         {
             if(painter.waypoints.Count > 0 && painter.polygon != null)
-                route.RouteFromPolygon(new Drone(5, 5, Double.Parse(textBoxDronRadius.Text)));
+                route.RouteFromPolygon(new Drone(5, 5, Double.Parse(textBoxDronRadius.Text) / 111319));
         }
 
         private void gMapControl1_MouseClick(object sender, MouseEventArgs e)
@@ -157,7 +178,7 @@ namespace DroneRouteMap
             {
                 case "point":
                     {
-                            painter.AddMarker(point, "green");    
+                            painter.AddMarker(point, "green"); 
                         break;
                     }
                 case "polygon":

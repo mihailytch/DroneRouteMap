@@ -10,27 +10,28 @@ namespace DroneRouteMap
 {
     abstract class Geometry
     {
-        public bool cross(PointLatLng a, PointLatLng b, PointLatLng c, PointLatLng d)
+        struct Line
         {
-            double k1, k2, x, y, x1 = a.Lng, y1 = a.Lat, x2 = b.Lng, y2 = b.Lat, 
+            PointLatLng a;
+            PointLatLng b;
+        }
+
+        public PointLatLng WhereCross(PointLatLng a, PointLatLng b, PointLatLng c, PointLatLng d)
+        {
+            double x, y, x1 = a.Lng, y1 = a.Lat, x2 = b.Lng, y2 = b.Lat, 
                 x3 = c.Lng, y3 = c.Lat, x4 = d.Lng, y4 = d.Lat;
 
             x = ((x1 * y2 - x2 * y1) * (x4 - x3) - (x3 * y4 - x4 * y3) * (x2 - x1)) / ((y1 - y2) * (x4 - x3) - (y3 - y4) * (x2 - x1));
 
             y = ((y3 - y4) * x - (x3 * y4 - x4 * y3)) / (x4 - x3);
 
-            if (((x1 <= x) && (x2 >= x) && (x3 <= x) && (x4 >= x)) 
-                || ((y1 <= y) && (y2 >= y) && (y3 <= y) && (y4 >= y)))
-            {
-                k1 = (x2 - x1) / (y2 - y1);
-                k2 = (x4 - x3) / (y4 - y3);
-                if(k1 != k2)
-                return true;
-            }
-            return false;
+            if (cross(a, b, c, d))
+                return (new PointLatLng(y, x));
+            else
+                return new PointLatLng (0, 0);
         }
 
-        public bool cross2(PointLatLng a, PointLatLng b, PointLatLng c, PointLatLng d)
+        public bool cross(PointLatLng a, PointLatLng b, PointLatLng c, PointLatLng d)
         {
             PointLatLng[] points1 = new PointLatLng[2] { a, b };
 
@@ -68,7 +69,7 @@ namespace DroneRouteMap
             foreach (PointLatLng point in polygon.Points)
             {
                 if ((a.Lat < prepoint.Lat || a.Lat < point.Lat) && (a.Lng < prepoint.Lng || a.Lng < point.Lng))
-                    if (cross2(a, testray, prepoint, point))
+                    if (cross(a, testray, prepoint, point))
                     numcross++;
                 prepoint = point;
             }
@@ -172,15 +173,19 @@ namespace DroneRouteMap
 
             PointLatLng centralpoint = CenterPoint(polygon);
 
-            int count = points.Count(), index = 0, startindex = 0;
+            int count = points.Count(), index = 0, startindex = 0, minlatindex = 0;
 
-            double firsum = 0, secsum = 0, 
+            double firsum = 0, secsum = 0, minlat = points[startindex].Lat, 
                 minangle = RelativeCorner(centralpoint, points[startindex]);
 
             foreach (PointLatLng point in points)
             {
                 if (RelativeCorner(centralpoint, point) < minangle)
                     startindex = index;
+
+                if (point.Lat < minlat)
+                    minlatindex = index;
+
                 index++;
             }
 
@@ -192,14 +197,28 @@ namespace DroneRouteMap
             for (int i = 0; i < startindex; i++)
                 rotatedpoints.Add(points[i]);
 
-            for (int i = 0; i < count - 1; i++)
+            centralpoint.Lat = minlat;
+
+            for (int i = 0; i < count; i++)
             {
-                firsum += points[i].Lng * points[i + 1].Lat;
-                secsum += points[i].Lat * points[i + 1].Lng;
+                PointLatLng firpoint, secpoint; 
+
+                if (i < count - 1)
+                {
+                    firpoint = MeterCord(centralpoint, points[i]);
+                    secpoint = MeterCord(centralpoint, points[i + 1]);
+                } else
+                {
+                    firpoint = MeterCord(centralpoint, points.Last());
+                    secpoint = MeterCord(centralpoint, points.First());
+                }
+
+                firsum += firpoint.Lng * secpoint.Lat;
+                secsum += firpoint.Lat * secpoint.Lng;
             }
 
-            firsum += points.Last().Lng * points[0].Lat;
-            secsum += points.Last().Lat * points[0].Lng;
+            //firsum += points.Last().Lng * points[0].Lat;
+            //secsum += points.Last().Lat * points[0].Lng;
 
             return Math.Abs(firsum - secsum) / 2d;
         }
@@ -216,6 +235,15 @@ namespace DroneRouteMap
             }
 
             return new PointLatLng(lat / count, lng / count);
+        }
+
+        public PointLatLng Ugolok(PointLatLng a, PointLatLng b, double distance)
+        {
+            double basecorner = RelativeCorner(a, b);
+
+            PointLatLng ugolok = PointFromDistCorner(a, distance, basecorner);
+
+            return ugolok;
         }
 
         double Rad(double x)
@@ -238,6 +266,15 @@ namespace DroneRouteMap
             var c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
 
             return R * c; // returns the distance in meter
+        }
+
+        PointLatLng MeterCord(PointLatLng p1, PointLatLng p2)
+        {
+            double lat = getDistance(p1, new PointLatLng(p2.Lat, p1.Lng)),
+
+            lng = getDistance(p1, new PointLatLng(p1.Lat, p2.Lng));
+
+            return new PointLatLng(lat, lng);
         }
     }
 }

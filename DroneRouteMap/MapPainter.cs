@@ -175,5 +175,26 @@ namespace DroneRouteMap
 
             return false;
         }
+
+        public void AddCircle(PointLatLng a, double radius)
+        {
+            List<PointLatLng> points = new List<PointLatLng>();
+
+            double seg = Math.PI * 2 / 10;
+
+            for (int i = 0; i < 10; i++)
+            {
+                double theta = seg * i,
+                x = a.Lng + Math.Cos(theta) * radius,
+                y = a.Lat + Math.Sin(theta) * radius;
+
+                PointLatLng point = new PointLatLng(y, x);
+
+                points.Add(point);
+            }
+            GMapPolygon polygon = new GMapPolygon(points, "circle");
+
+            overlay.Polygons.Add(polygon);
+        }
     }
 }
