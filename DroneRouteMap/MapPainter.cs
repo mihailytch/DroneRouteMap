@@ -140,7 +140,7 @@ namespace DroneRouteMap
             }
         }
 
-        void AddLine(PointLatLng point1, PointLatLng point2)
+        public void AddLine(PointLatLng point1, PointLatLng point2)
         {
             List<PointLatLng> points = new List<PointLatLng>();
 

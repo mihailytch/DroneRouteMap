@@ -123,25 +123,21 @@ namespace DroneRouteMap
             painter.AddMarker(new GMap.NET.PointLatLng(0, 1), "red");
 
             painter.UpdatePolygon();
-
-            /*List<GMap.NET.PointLatLng> a = new List<GMap.NET.PointLatLng>
+            /*
+            List<GMap.NET.PointLatLng> a = new List<GMap.NET.PointLatLng>
             {
-                new GMap.NET.PointLatLng(1, 0), 
-                new GMap.NET.PointLatLng(-1, 0), 
-                new GMap.NET.PointLatLng(0, 1),
-                new GMap.NET.PointLatLng(0, -1)
+                new GMap.NET.PointLatLng(1, 1), 
+                new GMap.NET.PointLatLng(0, 1), 
+                new GMap.NET.PointLatLng(1, 2),
+                new GMap.NET.PointLatLng(1, 0)
             };
 
             foreach(GMap.NET.PointLatLng point in a)
             {
-                painter.AddMarker(point.Lat, point.Lng, "green");
+                painter.AddMarker(point, "green");
             }
-
-            Geometry g = new Geometry();
-
-            if (g.cross2(a[0], a[1], a[2], a[3]))
-                Console.WriteLine("lox");*/
-
+                Console.WriteLine(route.WhereCross(a[0], a[1], a[2], a[3]));
+*/
         }
 
         private void gMapControl1_OnMarkerClick(GMapMarker item, MouseEventArgs e)

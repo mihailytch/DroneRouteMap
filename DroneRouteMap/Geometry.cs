@@ -21,14 +21,13 @@ namespace DroneRouteMap
             double x, y, x1 = a.Lng, y1 = a.Lat, x2 = b.Lng, y2 = b.Lat, 
                 x3 = c.Lng, y3 = c.Lat, x4 = d.Lng, y4 = d.Lat;
 
-            x = ((x1 * y2 - x2 * y1) * (x4 - x3) - (x3 * y4 - x4 * y3) * (x2 - x1)) / ((y1 - y2) * (x4 - x3) - (y3 - y4) * (x2 - x1));
-
-            y = ((y3 - y4) * x - (x3 * y4 - x4 * y3)) / (x4 - x3);
+            x = -((x1 * y2 - x2 * y1) * (x4 - x3) - (x3 * y4 - x4 * y3) * (x2 - x1)) / ((y1 - y2) * (x4 - x3) - (y3 - y4) * (x2 - x1));
+            y = ((y3 - y4) * (-x) - (x3 * y4 - x4 * y3)) / (x4 - x3);
 
             if (cross(a, b, c, d))
                 return (new PointLatLng(y, x));
             else
-                return new PointLatLng (0, 0);
+                return (new PointLatLng(70,70));
         }
 
         public bool cross(PointLatLng a, PointLatLng b, PointLatLng c, PointLatLng d)
