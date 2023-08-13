@@ -15,218 +15,161 @@ namespace DroneRouteMap
 
         public void RouteFromPolygon (Drone drone)
         {
-            var polygon = painter.polygon;
+            GMapPolygon polygon = painter.polygon;
 
-            double radius = getDistance(new PointLatLng(0, 0), new PointLatLng(0, drone.radius));
+            List<PointLatLng> polygon_points = polygon.Points;
 
-            double polygonarea = Area(painter.polygon),
+            double radius = FromMeters(drone.radius);
 
-            circlearea = Math.PI * Math.Pow(radius, 2d);
+            int count = polygon_points.Count;
 
-            if (polygonarea > circlearea)
+            double polygon_area = Area(polygon),
+
+            circle_area = Math.PI * Math.Pow(radius, 2d);
+
+            if (polygon_area > circle_area * 2)
             {
-                PointLatLng frompoint = painter.waypoints.Last(),
-                    
-                    startpoint = polygon.Points.First(),
-                    
-                    nextpoint = new PointLatLng(),
-                   
-                    prepoint = new PointLatLng(),
-                    
-                    testpoint = new PointLatLng();
+                PointLatLng from_point = painter.waypoints.Last(),
 
-                List<PointLatLng> rotatedpolygon = new List<PointLatLng>(),
+                    start_point = NearestPoint(polygon_points, from_point);
 
-                    innerpolygon = new List<PointLatLng>(),
+                List<PointLatLng> rotated_polygon = RotatePointList(polygon_points, start_point, count - 1),
 
-                    testpolygon = new List<PointLatLng>();
+                    inner_polygon = new List<PointLatLng>(),
 
-                int i = 0, startindex = 0;
+                    test_polygon = new List<PointLatLng>(),
 
-                foreach (PointLatLng point in polygon.Points)
-                {
-                    double distance = Distance(point, frompoint);
+                    route = new List<PointLatLng>();
 
-                    double startdistance = Distance(startpoint, frompoint);
+                PointLatLng pre_point = rotated_polygon[count - 2],
 
-                    if (distance < startdistance)
-                    {
-                        startpoint = point;
-                        startindex = i;
-                    }
-                    i++;
-                }
+                    next_point = new PointLatLng(),
 
-                for (i = startindex + 1; i < polygon.Points.Count; i++)
-                    rotatedpolygon.Add(polygon.Points[i]);
+                    test_point = new PointLatLng();
 
-                for (i = 0; i <= startindex; i++)
-                    rotatedpolygon.Add(polygon.Points[i]);
-
-                int PointCount = rotatedpolygon.Count;
-
-                prepoint = rotatedpolygon[PointCount - 2];
-                startpoint = rotatedpolygon[PointCount - 1];
                 // ставим точки у углов полигона
-                for (i = 0; i < PointCount; i++)
+                foreach (PointLatLng point in rotated_polygon)
                 {
-                    // определяем следующую точку, если текущая в конце то начальная
-                    if (i < PointCount)
-                        nextpoint = rotatedpolygon[i];
-                    else nextpoint = rotatedpolygon[0];
+                    next_point = point;
 
-                    double corner = Corner(prepoint, startpoint, nextpoint);
+                    test_point = PointInCenterOfAngle(pre_point, start_point, next_point, radius, false);
 
-                    double basecorner = BaseCorner(prepoint, startpoint, nextpoint);
+                    PointLatLng inner_point = PointInCenterOfAngle(pre_point, start_point, next_point, radius * 2, false);
 
-                    double sumcorner = corner / 2d + basecorner;
+                    PointLatLng[,] lines = new PointLatLng[2, 2];
 
-                    testpoint = PointFromDistCorner(startpoint, drone.radius, sumcorner);
-
-                    PointLatLng innerpoint = PointFromDistCorner(testpoint, drone.radius * 2, sumcorner);
-                    // если угол тупой то ставим просто точку маршрута и внутреннюю у угла
-                    if (!IsPointInPolygon(testpoint, polygon))
+                    if (next_point == rotated_polygon.First())
                     {
-                        testpoint = PointFromDistCorner(startpoint, drone.radius, sumcorner + Math.PI);
+                        lines = TwoParallelLinesInPolygon(pre_point, start_point, radius, polygon);
 
-                        innerpoint = PointFromDistCorner(testpoint, drone.radius * 2, sumcorner + Math.PI);
-
-                        painter.AddMarker(testpoint, "green");
-                        painter.AddCircle(testpoint, drone.radius);
-
-                        testpolygon.Add(innerpoint);
-                    }
-                    else
-                    {
-                        double distance = Distance(startpoint, nextpoint);
-                        // вычисляем точку от текущего угла
-                        for (int j = 2; j * drone.radius < distance; j++)
-                        {
-                            double relativecorner = RelativeCorner(startpoint, nextpoint),
-
-                            sidecorner = Math.PI / 2d;
-
-                            PointLatLng neartestpoint = PointFromDistCorner(startpoint, j * drone.radius, relativecorner),
-                                
-                                backtestpoint = PointFromDistCorner(neartestpoint, drone.radius * 2, relativecorner + Math.PI);
-
-                            neartestpoint = PointFromDistCorner(neartestpoint, drone.radius * 2, relativecorner + sidecorner);
-                            // проверка на сторону от линии где полигон
-                            if (!IsPointInPolygon(neartestpoint, polygon))
-                            {
-                                sidecorner = -sidecorner;
-                                neartestpoint = PointFromDistCorner(neartestpoint, drone.radius * 4, relativecorner + sidecorner);
-                            }
-                            // ставим в начале точку у угла, а потом от угла, а также 
-                            if(IsPointInPolygon(neartestpoint, polygon) && Distance(startpoint, backtestpoint) < distance)
-                            {
-                                PointLatLng nearpoint = PointFromDistCorner(neartestpoint, drone.radius, relativecorner - sidecorner);
-
-                                painter.AddMarker(testpoint, "green");
-                                painter.AddCircle(testpoint, drone.radius);
-
-                                painter.AddMarker(nearpoint, "green");
-                                painter.AddCircle(nearpoint, drone.radius);
-
-                                testpolygon.Add(neartestpoint);
-                                //painter.AddMarker(neartestpoint, "cross");
-
-                                break;
-                            }
-                        }
-                        // вычисляем точку от следующего угла
-                        for (int j = 2; j * drone.radius < distance; j++)
-                        {
-                            double relativecorner = RelativeCorner(startpoint, nextpoint),
-
-                            sidecorner = Math.PI / 2d;
-
-                            PointLatLng fartestpoint = PointFromDistCorner(nextpoint, j * drone.radius, relativecorner + Math.PI),
-
-                                forwardtestpoint = PointFromDistCorner(fartestpoint, drone.radius * 2, relativecorner);
-
-                            fartestpoint = PointFromDistCorner(fartestpoint, drone.radius * 2, relativecorner + sidecorner);
-                            // проверка на сторону от линии где полигон
-                            if (!IsPointInPolygon(fartestpoint, polygon))
-                            {
-                                sidecorner = -sidecorner;
-                                fartestpoint = PointFromDistCorner(fartestpoint, drone.radius * 4, relativecorner + sidecorner);
-                            }
-                            // ставим точку от следующего угла
-                            if (IsPointInPolygon(fartestpoint, polygon) && Distance(startpoint, forwardtestpoint) < distance)
-                            {
-                                PointLatLng farpoint = PointFromDistCorner(fartestpoint, drone.radius, relativecorner - sidecorner);
-
-                                painter.AddMarker(farpoint, "green");
-                                painter.AddCircle(farpoint, drone.radius);
-
-                                testpolygon.Add(fartestpoint);
-                                //painter.AddMarker(fartestpoint, "cross");
-
-                                break;
-                            }
-                        }
-                        int testcount = testpolygon.Count;
-                        
-                        if (testcount >= 4)
-                        {
-                            PointLatLng a = testpolygon[testcount - 4],
-                            b = testpolygon[testcount - 3],
-                            c = testpolygon[testcount - 2],
-                            d = testpolygon[testcount - 1];
-                            /*
-                            painter.AddLine(a,b);
-
-                            painter.AddLine(c, d);
-
-                            painter.AddMarker(WhereCross(a, b, c, d), "cross");
-                            */
-                            if (i == PointCount - 1)
-                            {
-                                a = testpolygon[0];
-                                b = testpolygon[1];
-                                if (cross(a, b, c, d))
-                                    innerpolygon.Add(WhereCross(a, b, c, d));
-                                //painter.AddMarker(innerpolygon.Last(), "cross");
-                            }
-                            else
-                            if(cross(a, b, c, d))
-                                innerpoint = WhereCross(a, b, c, d);
-
-                        }
-
+                        test_polygon.Add(lines[1, 0]); test_polygon.Add(lines[1, 1]);
                     }
 
-                    if (i != 0)
+                    // если угол вывернутый то ставим просто точку маршрута и внутреннюю у угла
+                    if (!IsPointInPolygon(test_point, polygon))
                     {
-                        innerpolygon.Add(innerpoint);
-                        //painter.AddMarker(innerpoint, " cross");
+                        test_point = PointInCenterOfAngle(pre_point, start_point, next_point, radius, true);
+
+                        inner_point = PointInCenterOfAngle(pre_point, start_point, next_point, radius * 2, true);
                     }
 
-                    prepoint = startpoint;
+                    route.Add(test_point);
 
-                    startpoint = nextpoint;
+                    lines = TwoParallelLinesInPolygon(start_point, next_point, radius, polygon);
+
+                    route.Add(lines[0, 0]); route.Add(lines[0, 1]);
+
+                    test_polygon.Add(lines[1, 0]); test_polygon.Add(lines[1, 1]);
+
+                    int test_count = test_polygon.Count;
+
+                    PointLatLng a = test_polygon[test_count - 4],
+                    b = test_polygon[test_count - 3],
+                    c = test_polygon[test_count - 2],
+                    d = test_polygon[test_count - 1];
+
+                    if (cross(a, b, c, d))
+                        inner_point = WhereCross(a, b, c, d);
+
+                    inner_polygon.Add(inner_point);
+
+                    pre_point = start_point;
+
+                    start_point = next_point;
                 }
+
+                foreach (PointLatLng p in route)
+                    painter.AddMarker(p, "green");
+
+                List<PointLatLng> inner_polygon_original = new List<PointLatLng>(inner_polygon);
+
+                foreach (PointLatLng p in inner_polygon_original)
+                    if (!IsPointInPolygon(p, polygon))
+                        inner_polygon.Remove(p);
 
                 painter.DelPolygon();
 
-                painter.AddPolygon(innerpolygon);
+                if (inner_polygon.Count < 3)
+                {
+                    if(!(inner_polygon.Count < 2))
+                        painter.AddMarker(CenterPoint(inner_polygon), "green");
 
-                Console.WriteLine(Area(painter.polygon));
+                    return;
+                }
 
-                Console.WriteLine(Math.PI * Math.Pow(drone.radius, 2));
+                foreach (PointLatLng p in inner_polygon)
+                {
+                    painter.AddMarker(p, "red");
+                }
 
+                painter.UpdatePolygon();
+                
                 RouteFromPolygon(drone);
-
             }
             else
-                painter.AddMarker(CenterPoint(polygon), "green");
-            painter.DelPolygon();
+            {
+                painter.AddMarker(CenterPoint(polygon_points), "green");
+
+                painter.DelPolygon();
+            }
         }
 
         public string ToJson()
         {
             return JsonConvert.SerializeObject(painter.waypoints);
+        }
+
+        List<PointLatLng> RotatePointList(List<PointLatLng> list, PointLatLng point, int index)
+        {
+            List<PointLatLng> rotated_polygon = new List<PointLatLng>();
+
+            int count = list.Count, start_index = list.FindIndex(p => p == point),
+                invert_index = count - index;
+
+            for (int i = start_index + invert_index; i < count; i++)
+                rotated_polygon.Add(list[i]);
+
+            for (int i = 0; i <= start_index; i++)
+                rotated_polygon.Add(list[i]);
+
+            return rotated_polygon;
+        }
+
+        List<PointLatLng> OrginalList(List<PointLatLng> list)
+        {
+            List<PointLatLng> list_original = new List<PointLatLng>();
+
+            foreach (PointLatLng check_point in list)
+            {
+                bool exist = false;
+
+                foreach (PointLatLng point in list_original)
+                    if (check_point == point) exist = true;
+
+                if (!exist)
+                    list_original.Add(check_point);
+            }
+            return list_original;
         }
     }
 }

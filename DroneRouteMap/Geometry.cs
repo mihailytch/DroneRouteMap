@@ -170,11 +170,12 @@ namespace DroneRouteMap
         {
             var points = polygon.Points;
 
-            PointLatLng centralpoint = CenterPoint(polygon);
+            PointLatLng centralpoint = CenterPoint(points);
 
             int count = points.Count(), index = 0, startindex = 0, minlatindex = 0;
 
             double firsum = 0, secsum = 0, minlat = points[startindex].Lat, 
+
                 minangle = RelativeCorner(centralpoint, points[startindex]);
 
             foreach (PointLatLng point in points)
@@ -218,17 +219,19 @@ namespace DroneRouteMap
 
             //firsum += points.Last().Lng * points[0].Lat;
             //secsum += points.Last().Lat * points[0].Lng;
+            if (firsum == secsum)
+                ;
 
             return Math.Abs(firsum - secsum) / 2d;
         }
 
-        public PointLatLng CenterPoint(GMapPolygon polygon)
+        public PointLatLng CenterPoint(List<PointLatLng> points)
         {
             double lat = 0, lng = 0;
 
-            int count = polygon.Points.Count;
+            int count = points.Count;
 
-            foreach(PointLatLng point in polygon.Points)
+            foreach(PointLatLng point in points)
             {
                 lat += point.Lat; lng += point.Lng;
             }
@@ -274,6 +277,97 @@ namespace DroneRouteMap
             lng = getDistance(p1, new PointLatLng(p1.Lat, p2.Lng));
 
             return new PointLatLng(lat, lng);
+        }
+
+        public PointLatLng NearestPoint(List<PointLatLng> list, PointLatLng a)
+        {
+            PointLatLng nearpoint = list.First();
+
+            foreach (PointLatLng point in list)
+            {
+                double distance = Distance(point, a);
+
+                double neardistance = Distance(nearpoint, a);
+
+                if (distance < neardistance)
+                    nearpoint = point;
+            }
+            return nearpoint;
+        }
+
+        protected double FromMeters (double distance)
+        {
+            return distance / 111319d;
+        }
+
+        protected PointLatLng PointInCenterOfAngle(PointLatLng a, PointLatLng b, PointLatLng c, double radius, bool IsAntiAngle)
+        {
+            double corner = Corner(a, b, c);
+
+            double base_corner = BaseCorner(a, b, c);
+
+            double sum_corner = !IsAntiAngle ? corner / 2d + base_corner : corner / 2d + base_corner + Math.PI;
+
+            return PointFromDistCorner(b, radius, sum_corner);
+        }
+
+        protected PointLatLng[,] TwoParallelLinesInPolygon(PointLatLng a, PointLatLng b, double radius, GMapPolygon polygon)
+        {
+            double relative_corner = RelativeCorner(a, b),
+
+            side_corner = Math.PI / 2d,
+
+            distance = Distance(a, b);
+
+            PointLatLng near_point = a, near_test_point = new PointLatLng(),
+                far_point = b, far_test_point = new PointLatLng();
+            // вычисляем точку от текущего угла
+            for (int j = 2; j * radius < distance; j++)
+            {
+                near_test_point = PointFromDistCorner(a, j * radius, relative_corner);
+
+                PointLatLng back_test_point = PointFromDistCorner(near_test_point, radius * 2, relative_corner + Math.PI);
+
+                near_test_point = PointFromDistCorner(near_test_point, radius * 2, relative_corner + side_corner);
+                // проверка на сторону от линии где полигон
+                if (!IsPointInPolygon(near_test_point, polygon))
+                {
+                    side_corner = -side_corner;
+                    near_test_point = PointFromDistCorner(near_test_point, radius * 4, relative_corner + side_corner);
+                }
+                // ставим точку от угла
+                if (IsPointInPolygon(near_test_point, polygon) && Distance(a, back_test_point) < distance)
+                {
+                    near_point = PointFromDistCorner(near_test_point, radius, relative_corner - side_corner);
+
+                    break;
+                }
+            }
+            // вычисляем точку от следующего угла
+            for (int j = 2; j * radius < distance; j++)
+            {
+                side_corner = Math.PI / 2d;
+
+                far_test_point = PointFromDistCorner(b, j * radius, relative_corner + Math.PI);
+
+                PointLatLng forward_test_point = PointFromDistCorner(far_test_point, radius * 2, relative_corner);
+
+                far_test_point = PointFromDistCorner(far_test_point, radius * 2, relative_corner + side_corner);
+                // проверка на сторону от линии где полигон
+                if (!IsPointInPolygon(far_test_point, polygon))
+                {
+                    side_corner = -side_corner;
+                    far_test_point = PointFromDistCorner(far_test_point, radius * 4, relative_corner + side_corner);
+                }
+                // ставим точку от следующего угла
+                if (IsPointInPolygon(far_test_point, polygon) && Distance(a, forward_test_point) < distance)
+                {
+                    far_point = PointFromDistCorner(far_test_point, radius, relative_corner - side_corner);
+
+                    break;
+                }
+            }
+            return new PointLatLng[2, 2] { { near_point, far_point }, { near_test_point, far_test_point } };
         }
     }
 }

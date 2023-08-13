@@ -20,5 +20,10 @@ namespace DroneRouteMap
             width = w;
             radius = r;
         }
+
+        public double GetRadiusFromMeters ()
+        {
+            return radius / 111319;
+        }
     }
 }

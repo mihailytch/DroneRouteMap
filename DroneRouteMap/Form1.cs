@@ -113,14 +113,16 @@ namespace DroneRouteMap
             painter.AddMarker(new GMap.NET.PointLatLng(1, 0), "red");
             painter.AddMarker(new GMap.NET.PointLatLng(0.25, 0.25), "red");
             painter.AddMarker(new GMap.NET.PointLatLng(0, 1), "red");
+            painter.AddMarker(new GMap.NET.PointLatLng(0, 2), "red");
 
             painter.UpdatePolygon();
 
-            route.RouteFromPolygon(new Drone(5, 5, 1000d / 111319d));
-
+            route.RouteFromPolygon(new Drone(5, 5, 1000d));
+            /*
             painter.AddMarker(new GMap.NET.PointLatLng(1, 0), "red");
             painter.AddMarker(new GMap.NET.PointLatLng(0.25, 0.25), "red");
             painter.AddMarker(new GMap.NET.PointLatLng(0, 1), "red");
+            painter.AddMarker(new GMap.NET.PointLatLng(0, 2), "red");
 
             painter.UpdatePolygon();
             /*
@@ -137,7 +139,7 @@ namespace DroneRouteMap
                 painter.AddMarker(point, "green");
             }
                 Console.WriteLine(route.WhereCross(a[0], a[1], a[2], a[3]));
-*/
+/**/
         }
 
         private void gMapControl1_OnMarkerClick(GMapMarker item, MouseEventArgs e)
@@ -158,8 +160,8 @@ namespace DroneRouteMap
 
         private void buttonRoutePol_Click(object sender, EventArgs e)
         {
-            if(painter.waypoints.Count > 0 && painter.polygon != null)
-                route.RouteFromPolygon(new Drone(5, 5, Double.Parse(textBoxDronRadius.Text) / 111319));
+            if (painter.waypoints.Count > 0 && painter.polygon != null)
+                route.RouteFromPolygon(new Drone(5, 5, Double.Parse(textBoxDronRadius.Text)));
         }
 
         private void gMapControl1_MouseClick(object sender, MouseEventArgs e)
