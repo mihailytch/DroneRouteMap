@@ -12,6 +12,17 @@ namespace DroneRouteMap
 {
     class MapPainter
     {
+        public struct PolygonPath
+        {
+            public PointLatLng EndPoint;
+
+            public PointLatLng StartPoint;
+
+            public List<PointLatLng> Dots;
+        }
+
+        public List<PolygonPath> polygon_paths = new List<PolygonPath>();
+
         public GMapOverlay overlay { get; set; }
 
         public GMapPolygon polygon = null;
@@ -121,14 +132,8 @@ namespace DroneRouteMap
 
             overlay.Markers.Remove(marker);
 
-            int i = 0;
-
             foreach (GMapMarker point in markers)
-            {
-                point.ToolTipText = i.ToString();
-
-                i++;
-            }
+                point.ToolTipText = waypoints.IndexOf(point.Position).ToString();
         }
 
         public void AddPolygon(List<PointLatLng> points)
@@ -194,7 +199,7 @@ namespace DroneRouteMap
             lines.Add(newline);
         }
 
-        bool DelLine(GMapMarker end_marker)
+        bool DelLine2(GMapMarker end_marker)
         {
             PointLatLng end_point = end_marker.Position;
 
@@ -234,7 +239,7 @@ namespace DroneRouteMap
             overlay.Polygons.Add(polygon);
         }
 
-        bool DelLine2(GMapMarker end_marker)
+        bool DelLine(GMapMarker end_marker)
         {
             PointLatLng end_point = end_marker.Position;
 
@@ -244,21 +249,25 @@ namespace DroneRouteMap
 
             if (line != null)
             {
-                PointLatLng start_point = line.Points[1];
+                /*PointLatLng start_point = line.Points[1];
 
                 GMapMarker start_marker = markers.Where(marker => marker.Position == start_point).Count() > 0
 
                     ? markers.Where(marker => marker.Position == start_point).First() : null;
+*/
+                int end_index = waypoints.IndexOf(end_point),
+                    
+                    end_marker_index = markers.IndexOf(end_marker);
 
-                int index = waypoints.IndexOf(start_point);
+                PointLatLng start_point = end_marker_index > 0 
+                    ? markers[end_marker_index - 1].Position
+                    : new PointLatLng(0, 0);
 
-                PointLatLng pre_point = markers[markers.IndexOf(start_marker) - 1].Position;
+                int start_index = waypoints.IndexOf(start_point);
 
-                int pre_index = waypoints.IndexOf(pre_point);
-
-                if (waypoints[index - 1] != pre_point)
+                if (end_index > 0 && waypoints[end_index - 1] != start_point)
                 {
-                    for (int i = index; i > pre_index; i--)
+                    for (int i = end_index; i > start_index + 1; i--)
                     {
                         PointLatLng point = waypoints[i];
 
@@ -269,6 +278,11 @@ namespace DroneRouteMap
                         overlay.Polygons.Remove(this_line);
 
                         lines.Remove(this_line);
+
+                        if(!markers.Exists(m => m.Position == point))
+                            waypoints.Remove(point);
+
+                        //AddMarker(point, "cross");
                     }
                 }
                 else

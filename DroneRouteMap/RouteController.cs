@@ -11,6 +11,8 @@ namespace DroneRouteMap
 {
     class RouteController : Geometry
     {
+        //List<PointLatLng> Route;
+
         public MapPainter painter { get; set; }
 
         public void RouteFromPolygon (Drone drone)
@@ -99,7 +101,7 @@ namespace DroneRouteMap
                 }
 
                 foreach (PointLatLng p in route)
-                    painter.AddMarker(p, "green");
+                    painter.AddMarker(p, "dot");
 
                 List<PointLatLng> inner_polygon_original = new List<PointLatLng>(inner_polygon);
 
@@ -113,7 +115,7 @@ namespace DroneRouteMap
                 {
                     if(!(inner_polygon.Count < 2))
                         painter.AddMarker(CenterPoint(inner_polygon), "green");
-
+                    else if(inner_polygon != null) painter.AddMarker(inner_polygon[0], "green");
                     return;
                 }
 
@@ -137,6 +139,20 @@ namespace DroneRouteMap
         public string ToJson()
         {
             return JsonConvert.SerializeObject(painter.waypoints);
+        }
+
+        public string ToText()
+        {
+            string text = "Points:\n{";
+
+            int i = 1;
+
+            foreach (PointLatLng point in painter.waypoints)
+                text += "\nPoint_" + i++ + ':' + point.Lat + ',' + point.Lng;
+
+            text += "\n}";
+
+            return text;
         }
 
         List<PointLatLng> RotatePointList(List<PointLatLng> list, PointLatLng point, int index)

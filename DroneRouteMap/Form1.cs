@@ -30,6 +30,9 @@ namespace DroneRouteMap
 
         private void Form1_Load(object sender, EventArgs e)
         {
+            //Чтобы дабл с точкой выводился и вводился
+            System.Threading.Thread.CurrentThread.CurrentCulture = new System.Globalization.CultureInfo("en-US");
+
             //Настройки для компонента GMap.
             gMapControl1.Bearing = 0;
 
@@ -103,7 +106,7 @@ namespace DroneRouteMap
             route.painter = painter;
 
             ////////////////////////////////////////////////////////////
-            /*
+            
             gMapControl1.Position = new GMap.NET.PointLatLng(0.5d, 1);
 
             gMapControl1.Zoom = 8;
@@ -144,6 +147,7 @@ namespace DroneRouteMap
 
         private void gMapControl1_OnMarkerClick(GMapMarker item, MouseEventArgs e)
         {
+            if(e.Button == MouseButtons.Left)
             painter.DelMarker(item);
             painter.UpdatePolygon();
         }
@@ -155,7 +159,7 @@ namespace DroneRouteMap
 
         private void buttonRouteDot_Click(object sender, EventArgs e)
         {
-            label1.Text = route.ToJson();
+            label1.Text = route.ToText();
         }
 
         private void buttonRoutePol_Click(object sender, EventArgs e)
