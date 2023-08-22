@@ -75,25 +75,31 @@ namespace DroneRouteMap
                         inner_point = PointInCenterOfAngle(pre_point, start_point, next_point, radius * 2, true);
                     }
 
-                    route.Add(test_point);
+                    if (IsPointInPolygon(test_point, polygon))
+                    {
+                        route.Add(test_point);
 
-                    lines = TwoParallelLinesInPolygon(start_point, next_point, radius, polygon);
+                        lines = TwoParallelLinesInPolygon(start_point, next_point, radius, polygon);
 
-                    route.Add(lines[0, 0]); route.Add(lines[0, 1]);
+                        route.Add(lines[0, 0]); route.Add(lines[0, 1]);
 
-                    test_polygon.Add(lines[1, 0]); test_polygon.Add(lines[1, 1]);
+                        test_polygon.Add(lines[1, 0]); test_polygon.Add(lines[1, 1]);
 
-                    int test_count = test_polygon.Count;
+                        int test_count = test_polygon.Count;
 
-                    PointLatLng a = test_polygon[test_count - 4],
-                    b = test_polygon[test_count - 3],
-                    c = test_polygon[test_count - 2],
-                    d = test_polygon[test_count - 1];
+                        PointLatLng a = test_polygon[test_count - 4],
+                        b = test_polygon[test_count - 3],
+                        c = test_polygon[test_count - 2],
+                        d = test_polygon[test_count - 1];
 
-                    if (cross(a, b, c, d))
-                        inner_point = WhereCross(a, b, c, d);
+                        if (cross(a, b, c, d))
+                            inner_point = WhereCross(a, b, c, d);
 
-                    inner_polygon.Add(inner_point);
+                        if(IsPointInPolygon(inner_point, polygon))
+                            inner_polygon.Add(inner_point);
+                    }
+
+                    else route.Add(start_point);
 
                     pre_point = start_point;
 
@@ -105,9 +111,9 @@ namespace DroneRouteMap
 
                 List<PointLatLng> inner_polygon_original = new List<PointLatLng>(inner_polygon);
 
-                foreach (PointLatLng p in inner_polygon_original)
+                /*foreach (PointLatLng p in inner_polygon_original)
                     if (!IsPointInPolygon(p, polygon))
-                        inner_polygon.Remove(p);
+                        inner_polygon.Remove(p);*/
 
                 painter.DelPolygon();
 
@@ -115,7 +121,7 @@ namespace DroneRouteMap
                 {
                     if(!(inner_polygon.Count < 2))
                         painter.AddMarker(CenterPoint(inner_polygon), "green");
-                    else if(inner_polygon != null) painter.AddMarker(inner_polygon[0], "green");
+                    //else if(inner_polygon != null) painter.AddMarker(inner_polygon[0], "green");
                     return;
                 }
 
@@ -126,7 +132,7 @@ namespace DroneRouteMap
 
                 painter.UpdatePolygon();
                 
-                RouteFromPolygon(drone);
+                //RouteFromPolygon(drone);
             }
             else
             {

@@ -106,7 +106,7 @@ namespace DroneRouteMap
             route.painter = painter;
 
             ////////////////////////////////////////////////////////////
-            
+            /*
             gMapControl1.Position = new GMap.NET.PointLatLng(0.5d, 1);
 
             gMapControl1.Zoom = 8;

@@ -12,22 +12,11 @@ namespace DroneRouteMap
 {
     class MapPainter
     {
-        public struct PolygonPath
-        {
-            public PointLatLng EndPoint;
-
-            public PointLatLng StartPoint;
-
-            public List<PointLatLng> Dots;
-        }
-
-        public List<PolygonPath> polygon_paths = new List<PolygonPath>();
-
         public GMapOverlay overlay { get; set; }
 
         public GMapPolygon polygon = null;
 
-        public List<GMapPolygon> lines = new List<GMapPolygon>();
+        List<GMapPolygon> lines = new List<GMapPolygon>();
 
         public List<PointLatLng> waypoints = new List<PointLatLng>();
 
@@ -35,7 +24,7 @@ namespace DroneRouteMap
 
         List<GMapMarker> markers = new List<GMapMarker>();
 
-        public List<GMapMarker> crosses = new List<GMapMarker>();
+        public List<GMapMarker> polygon_markers = new List<GMapMarker>();
 
         public void AddMarker(PointLatLng point, string color)
         {
@@ -45,7 +34,7 @@ namespace DroneRouteMap
                     {
                         overlay.Markers.Add(new GMapMarkerGoogleRed(point));
 
-                        crosses.Add(overlay.Markers.Last());
+                        polygon_markers.Add(overlay.Markers.Last());
 
                         break;
                     }
@@ -128,7 +117,7 @@ namespace DroneRouteMap
                 waypoints.Remove(marker.Position);
 
             if (marker is GMapMarkerGoogleRed)
-                crosses.Remove(marker);
+                polygon_markers.Remove(marker);
 
             overlay.Markers.Remove(marker);
 
@@ -147,10 +136,10 @@ namespace DroneRouteMap
         {
             overlay.Polygons.Remove(polygon);
 
-            foreach (GMapMarker cross in crosses)
+            foreach (GMapMarker cross in polygon_markers)
                 overlay.Markers.Remove(cross);
 
-            crosses.Clear();
+            polygon_markers.Clear();
 
             polygon = null;
         }
@@ -168,7 +157,7 @@ namespace DroneRouteMap
 
                 List<PointLatLng> points = new List<PointLatLng>();
 
-                foreach (GMapMarkerGoogleRed cross in crosses)
+                foreach (GMapMarkerGoogleRed cross in polygon_markers)
                 {
                     points.Add(cross.Position);
                 }

@@ -217,11 +217,6 @@ namespace DroneRouteMap
                 secsum += firpoint.Lat * secpoint.Lng;
             }
 
-            //firsum += points.Last().Lng * points[0].Lat;
-            //secsum += points.Last().Lat * points[0].Lng;
-            if (firsum == secsum)
-                ;
-
             return Math.Abs(firsum - secsum) / 2d;
         }
 
@@ -237,15 +232,6 @@ namespace DroneRouteMap
             }
 
             return new PointLatLng(lat / count, lng / count);
-        }
-
-        public PointLatLng Ugolok(PointLatLng a, PointLatLng b, double distance)
-        {
-            double basecorner = RelativeCorner(a, b);
-
-            PointLatLng ugolok = PointFromDistCorner(a, distance, basecorner);
-
-            return ugolok;
         }
 
         double Rad(double x)
